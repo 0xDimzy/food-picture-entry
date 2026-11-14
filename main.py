@@ -1,15 +1,9 @@
-#!/usr/bin/env python3
-"""food-picture-01 entry: one photorealistic smash-burger photograph.
+"""Photorealistic smash burger photograph for the food-picture-01 bounty.
 
-The picture: a gourmet smash burger as the single hero dish — glossy
-toasted brioche bun, charred beef patty, melted cheddar dripping down
-the sides, tomato, pickles and lettuce on dark slate, steam rising,
-dramatic warm side light. Square 1024x1024, JPEG bytes in a file named
-entry.png (the gate tells PNG from JPEG by its first bytes).
-
-Writes the picture to /output/entry.png (or $MAKEFUN_OUTPUT_DIR/entry.png)
-by copying the entry.png beside this file, byte for byte, every run.
-Deterministic: two runs produce identical bytes.
+The bundled image is a square 1024x1024 JPEG of a gourmet smash burger
+served on dark slate. This script performs no image processing at all: it
+copies the bundled file byte-for-byte into the output directory the
+make.fun harness provides, so every run yields identical bytes.
 """
 
 import os
@@ -18,18 +12,19 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE / "entry.png"
-OUTPUT_DIR = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
 
 
-def main() -> None:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    target = OUTPUT_DIR / "entry.png"
+def main():
+    output_dir = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
+    output_dir.mkdir(parents=True, exist_ok=True)
+    target = output_dir / "entry.png"
     shutil.copyfile(SOURCE, target)
-    # Read back: the file the judge sees must be exactly the picture's bytes.
-    data = target.read_bytes()
-    assert data == SOURCE.read_bytes()
-    # And a whole JPEG: starts with SOI, ends with EOI.
-    assert data[:2] == b"\xff\xd8" and data[-2:] == b"\xff\xd9"
+    # Read the copy back and check it is the same whole JPEG we shipped.
+    copied = target.read_bytes()
+    original = SOURCE.read_bytes()
+    assert copied == original, "copied file differs from bundled entry.png"
+    assert copied[:2] == b"\xff\xd8", "missing JPEG SOI marker"
+    assert copied[-2:] == b"\xff\xd9", "missing JPEG EOI marker"
 
 
 if __name__ == "__main__":
